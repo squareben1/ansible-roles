@@ -1,0 +1,6 @@
+---
+# prometheus_nlb_addr: 54.123.45.678
+
+# open_iptables_tcp_ports:
+#   - 9090 # prometheus_port
+#   - "{{ssh_port}}"

@@ -1,0 +1,38 @@
+---
+- name: wget node-exporter and alertmanager
+  get_url:
+    url: https://github.com/prometheus/node_exporter/releases/download/v1.2.2/node_exporter-1.2.2.linux-amd64.tar.gz
+    dest: /media/
+
+- name: Extract node-exporter/alertmanager tar to /media
+  unarchive:
+    remote_src: yes
+    src: /media/node_exporter-1.2.2.linux-amd64.tar.gz
+    dest: /media/
+
+- name: Add the users 'node_exporter' with no home dir
+  ansible.builtin.user:
+    name: node_exporter
+    create_home: no
+    comment: node_exporter
+
+- name: Copy alertmanager and amtool to /usr/local/bin/
+  copy:
+    remote_src: yes
+    src: /media/node_exporter-1.2.2.linux-amd64/node_exporter
+    dest: /usr/local/bin/
+    owner: node_exporter
+    group: node_exporter
+    mode: "0755"
+
+- name: Copy node_exporter.service file to /etc/systemd/system
+  copy:
+    src: node_exporter.service
+    dest: /etc/systemd/system
+
+- name: Start node_exporter
+  systemd:
+    daemon_reload: yes
+    name: node_exporter
+    state: started
+    enabled: yes

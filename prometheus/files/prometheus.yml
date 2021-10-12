@@ -1,0 +1,30 @@
+global:
+  scrape_interval:
+    10s
+    # Rules and alerts are read from the specified file(s)
+rule_files:
+  - rules.yml
+
+# Alerting specifies settings related to the Alertmanager
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            # Alertmanager's default port is 9093
+            - mail-prometheus-nlb-example.elb.us-west-2.amazonaws.com:9093
+
+scrape_configs:
+  - job_name: "prometheus"
+    scrape_interval: 5s
+    static_configs:
+      - targets:
+          [
+            "mail-prometheus-nlb-example.elb.us-west-2.amazonaws.com:9090",
+            "199.12.345.7:9100",
+            "199.12.345.6:9100",
+            "199.12.345.5:9100",
+            "199.12.345.4:9100",
+            "199.12.345.3:9100",
+            "199.12.345.2:9100",
+            "199.12.345.1:9100",
+          ]

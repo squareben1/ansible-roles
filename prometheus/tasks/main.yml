@@ -1,0 +1,103 @@
+---
+- name: wget prometheus and alertmanager
+  get_url: 
+    url: "{{ item }}"
+    dest: /media/
+  loop:
+    - https://github.com/prometheus/prometheus/releases/download/v2.29.2/prometheus-2.29.2.linux-amd64.tar.gz
+    - https://github.com/prometheus/alertmanager/releases/download/v0.23.0/alertmanager-0.23.0.linux-amd64.tar.gz
+
+- name: Extract prometheus/alertmanager tar to /media
+  unarchive:
+    remote_src: yes
+    src: /media/{{ item }}
+    dest: /media/
+  loop:
+    - alertmanager-0.23.0.linux-amd64.tar.gz
+    - prometheus-2.29.2.linux-amd64.tar.gz
+
+- name: Add the users 'prometheus' and 'alertmanager' with no home dir
+  ansible.builtin.user:
+    name: "{{ item }}"
+    create_home: no
+    comment: prometheus
+  loop: 
+    - prometheus
+    - alertmanager
+
+- name: Create /var/lib/prometheus directory
+  file:
+    path: /var/lib/prometheus
+    state: directory
+    owner: prometheus
+    group: prometheus
+
+- name: Copy prometheus and promtool to /usr/local/bin/ 
+  copy:
+    remote_src: yes
+    src: /media/prometheus-2.29.2.linux-amd64/{{ item }}
+    dest: /usr/local/bin/
+    owner: prometheus
+    group: prometheus
+    mode: '0755'
+  loop: 
+    - prometheus
+    - promtool
+  
+- name: Copy consoles and console_libraries directories to /etc/prometheus
+  copy:
+    remote_src: yes
+    src: "/media/prometheus-2.29.2.linux-amd64/{{ item }}"
+    dest: /etc/prometheus/
+    owner: prometheus
+    group: prometheus
+  loop:
+    - consoles
+    - console_libraries
+
+- name: Copy prometheus.yml to /etc/prometheus
+  copy:
+    src: "{{ item }}"
+    dest: /etc/prometheus
+    owner: prometheus
+    group: prometheus
+  loop:
+    - prometheus.yml
+    - rules.yml
+
+- name: Copy alertmanager and amtool to /usr/local/bin/ 
+  copy:
+    remote_src: yes
+    src: "/media/alertmanager-0.23.0.linux-amd64/{{ item }}"
+    dest: /usr/local/bin/
+    owner: alertmanager
+    group: alertmanager
+    mode: '0755'
+  loop:
+    - alertmanager
+    - amtool
+
+- name: Copy alertmanager.yml to /etc/alertmanager
+  copy:
+    src: alertmanager.yml
+    dest: /etc/alertmanager/
+    owner: alertmanager
+    group: alertmanager
+
+- name: Copy prometheus.service and alertmanager.service file to /etc/systemd/system
+  copy:
+    src: "{{ item }}"
+    dest: /etc/systemd/system
+  loop:
+    - prometheus.service
+    - alertmanager.service
+
+- name: Start prometheus and alertmanager
+  systemd:
+    daemon_reload: yes
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  loop:
+    - prometheus.service
+    - alertmanager.service
